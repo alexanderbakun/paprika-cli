@@ -1,0 +1,34 @@
+{
+  "name": "paprika-cli",
+  "version": "0.0.0",
+  "description": "A cli tool helper for the paprika framework",
+  "main": "./bin/init.js",
+  "bin": {
+    "paprika": "./bin/init.js"
+  },
+  "scripts": {
+    "init": "node ./bin/init.js --task init",
+    "create": "node ./bin/init.js --task create",
+    "server": "node ./bin/init.js --task server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keleko34/paprika-cli.git"
+  },
+  "keywords": [
+    "paprika",
+    "cli",
+    "tool",
+    "task",
+    "manager"
+  ],
+  "author": "keleko34",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/keleko34/paprika-cli/issues"
+  },
+  "homepage": "https://github.com/keleko34/paprika-cli#readme",
+  "dependencies": {
+    "open": "0.0.5"
+  }
+}
