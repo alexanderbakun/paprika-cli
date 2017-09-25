@@ -1,0 +1,3 @@
+- Init: init should link paprika-cli to local so that new tasks can use .core
+- Init: certain commands can have in their config, init_required: (true/false)
+

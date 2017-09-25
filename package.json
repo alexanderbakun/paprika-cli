@@ -2,14 +2,15 @@
   "name": "paprika-cli",
   "version": "0.0.0",
   "description": "A cli tool helper for the paprika framework",
-  "main": "./bin/init.js",
+  "main": "./.core/.core.js",
   "bin": {
     "paprika": "./bin/init.js"
   },
   "scripts": {
     "init": "node ./bin/init.js --task init",
     "create": "node ./bin/init.js --task create",
-    "server": "node ./bin/init.js --task server"
+    "server": "node ./bin/init.js --task server",
+    "test": "node ./bin/init.js --task test"
   },
   "repository": {
     "type": "git",
@@ -29,10 +30,12 @@
   },
   "homepage": "https://github.com/keleko34/paprika-cli#readme",
   "dependencies": {
+    "chai": "^4.1.2",
     "commander": "^2.11.0",
     "connect": "^3.6.4",
-    "google-closure-compiler-js": "^20170910.0.0",
+    "google-closure-compiler-js": "^20170910.0.1",
     "inquirer": "^3.3.0",
+    "mocha": "^3.5.3",
     "open": "0.0.5",
     "serve-static": "^1.12.4"
   }
