@@ -34,6 +34,12 @@ function core()
         return (typeof _taskOptions[v] === 'object' && _taskOptions[v].cmd !== undefined && _taskOptions[v].prompt !== undefined)
       });
   
+  if(_taskOptions.init && !paprika.init)
+  {
+    console.error('\033[31mThis task requires you to have initialized "paprika init" command first and installed local files into the project\033[37m');
+    process.exit(1);
+  }
+  
   _currentTask = (typeof _taskOptions.firstCommand === 'function' ? _taskOptions.firstCommand() : (_taskOptions.firstCommand || _keys[0]));
   
   /* sort cli helper */
@@ -203,11 +209,6 @@ core.input = function(name, options, value)
     options.onaction((options.storage === 'array' ? _values[name][(_values[name].length-1)] : _values[name]),_values,paprika.task.config);
   }
   return core.nextCommand(name, options);
-}
-
-core.loadOptionConfig = function(name, options, value)
-{
-  
 }
 
 module.exports = core;
