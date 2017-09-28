@@ -20,7 +20,6 @@ globals.set = function()
   global.paprika.location.local = process.cwd().replace(/\\/g,'/').replace(/(\/node_modules.+)/g,'');
   global.paprika.location.local_tasks = {
     base: paprika.location.local+'/.paprika',
-    configs: paprika.location.local+'/.paprika/.configs',
     tasks: paprika.location.local+'/.paprika/.tasks',
     templates:paprika.location.local+'/.paprika/.templates'
   }
@@ -29,7 +28,6 @@ globals.set = function()
   global.paprika.location.module = __dirname.replace(/\\/g,'/').replace('/.core','');
   global.paprika.location.module_tasks = {
     base: paprika.location.module+'/src',
-    configs: paprika.location.module+'/src/.configs',
     tasks: paprika.location.module+'/src/.tasks',
     templates: paprika.location.module+'/templates'
   }
@@ -37,6 +35,11 @@ globals.set = function()
   /* parse params */
   global.paprika.args = process.argv.slice(2,process.argv.length);
   global.paprika.params = params.args(paprika.args).call();
+  
+  /* remove process args except help and options */
+  process.argv = process.argv.filter(function(v){
+    return (v.indexOf('\\') !== -1 || v === '-h' || v === '--help' || v === '-o' || v === '--options');
+  });
 
   /* task names from module */
   global.paprika.tasks_module = fs.readdirSync(paprika.location.module_tasks.tasks);
@@ -67,7 +70,7 @@ globals.getTask = function()
   {
     /* get modules */
     global.paprika.task.method = require(paprika.location.module_tasks.tasks+'/'+paprika.params.task+'/'+paprika.params.task);
-    global.paprika.task.config = require(paprika.location.module_tasks.configs+'/'+paprika.params.task+'/'+paprika.params.task);
+    global.paprika.task.config = require(paprika.location.module_tasks.tasks+'/'+paprika.params.task+'/'+paprika.params.task+'.config');
   }
   else if(paprika.tasks_local.indexOf(paprika.params.task) !== -1)
   {
@@ -76,7 +79,7 @@ globals.getTask = function()
 
     try
     {
-      global.paprika.task.config = require(paprika.location.local_tasks.config+'/'+paprika.params.task+'/'+paprika.params.task);
+      global.paprika.task.config = require(paprika.location.local_tasks.tasks+'/'+paprika.params.task+'/'+paprika.params.task+'.config');
     }
     catch(e)
     {

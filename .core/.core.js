@@ -18,22 +18,103 @@
    firstCommand string | function
 */
 
-var inquirer = require('inquirer');
+var commander = require('commander').version('0.0.1'),
+    inquirer = require('inquirer');
 
-var _task = parika.task.method,
-    _taskOptions = paprika.task.config,
+var _task,
+    /* _taskOptions = paprika.task.config, */
     _currentTask = '',
     _values = {};
     
 
 function core()
 {
+  var _taskOptions = paprika.task.config,
+      _keys = Object.keys(_taskOptions).filter(function(v){
+        return (typeof _taskOptions[v] === 'object' && _taskOptions[v].cmd !== undefined && _taskOptions[v].prompt !== undefined)
+      });
   
+  _currentTask = (typeof _taskOptions.firstCommand === 'function' ? _taskOptions.firstCommand() : (_taskOptions.firstCommand || _keys[0]));
+  
+  /* sort cli helper */
+  _keys.forEach(function(name){
+    var _options = core.parseCLIHelp(name, _taskOptions[name]);
+    commander = commander.option.apply(commander,_options);
+  });
+  
+  commander.option('-o, --options','Displays helper for options',commander.help.bind(commander)).parse(process.argv);
+  
+  core.runCommand(_currentTask, _taskOptions[_currentTask]);
+}
+
+core.parseCLIHelp = function(name, options)
+{
+    var _args = [],
+        _long = (typeof options.cmd.long === 'function' ? options.cmd.long(name, _values, options) : options.cmd.long),
+        _short = (typeof options.cmd.short === 'function' ? options.cmd.short(name, _values, options) : options.cmd.short),
+        _message = (typeof options.cmd.message === 'function' ? options.cmd.message(name, _values, options) : options.cmd.message),
+        _help = (typeof options.cmd.help === 'function' ? options.cmd.help(name, _values, options) : (options.cmd.help || _message))
+    /* command acceptance */
+    _args.push((_short ? _short+', ' : '')+_long + ' [value]');
+    /* command help message */
+    _args.push((_help || ''));
+    /* command empty function for commander */
+    _args.push(function(){});
+  
+    return _args;
 }
 
 core.runCommand = function(name, options)
 {
+  var _valueSet = false,
+      _value,
+      _prompt;
   
+  if(paprika.params.params.length !== 0)
+  {
+    
+    _value = paprika.params.params[0];
+    paprika.params.params.splice(0,1);
+    core.setCLIValue(name, options, _value);
+    _valueSet = true;
+  }
+  
+  if(paprika.params.rules[options.cmd.long] !== undefined)
+  {
+    _value = paprika.params.rules[options.cmd.long];
+    paprika.params.rules[options.cmd.long] = undefined;
+    paprika.params.rules[options.cmd.short] = undefined;
+    core.setCLIValue(name, options, _value);
+    _valueSet = true;
+  }
+  else if(paprika.params.rules[options.cmd.short] !== undefined)
+  {
+    _value = paprika.params.rules[options.cmd.short];
+    paprika.params.rules[options.cmd.long] = undefined;
+    paprika.params.rules[options.cmd.short] = undefined;
+    core.setCLIValue(name, options, _value);
+    _valueSet = true;
+  }
+  
+  if(!_valueSet)
+  {
+     _prompt = {
+       name: name,
+       message: (typeof options.prompt.message === 'function' ? options.prompt.message(name, _values, options) : options.prompt.message),
+       type: (typeof options.prompt.type === 'function' ? options.prompt.type(name, _values, options) : (options.prompt.type || 'input'))
+     }
+    
+    if(_prompt.type === 'list' || _prompt.type === 'checkbox')
+    {
+      _prompt.choices = (typeof options.prompt.choices === 'function' ? options.prompt.choices(name, _values, options) : (options.prompt.choices || []));
+    }
+    
+    inquirer.prompt(_prompt).then(core.prompt(name, options));
+  }
+  else
+  {
+    core.nextCommand(name, options);
+  }
   return core;
 }
 
@@ -43,7 +124,7 @@ core.nextCommand = function(name, options)
   
   if(!_action) console.error(name,' does not have an "action" to perform, please assign it one');
 
-  if(typeof _action === 'function') _action = _action(name, _values, _taskOptions);
+  if(typeof _action === 'function') _action = _action(name, _values, paprika.task.config);
   
   if(!_action || _action === 'exit')
   {
@@ -52,24 +133,24 @@ core.nextCommand = function(name, options)
   }
   else if(_action === 'end')
   {
-    _task(_values);
+    paprika.task.method(_values);
   }
   else
   {
     _currentTask = _action;
-    if(!options[_currentTask])
+    if(!paprika.task.config[_currentTask])
     {
       console.error('No command exists by the name of ',_currentTask);
       process.exit(1);
     }
-    core.runCommand(_currentTask,options[_currentTask]);
+    core.runCommand(_currentTask,paprika.task.config[_currentTask]);
   }
   return core;
 }
 
 core.setValue = function(name, options, value)
 {
-  if(typeof options.filter === 'function') value = options.filter(value,_values,_taskOptions);
+  if(typeof options.filter === 'function') value = options.filter(value,_values,paprika.task.config);
   if(options.storage === 'array')
   {
     if(!_values[name]) _values[name] = [];
@@ -91,7 +172,7 @@ core.setCLIValue = function(name, options, value)
   
   if(options.prompt.type === 'list')
   {
-    _choices = (typeof options.prompt.choices === 'function' ? options.prompt.choices(_values) : options.prompt.choices);
+    _choices = (typeof options.prompt.choices === 'function' ? options.prompt.choices(name, value, _values) : options.prompt.choices);
     _index = _choices.map(function(v){return v.toLowerCase()}).indexOf(value.toLowerCase());
     if(_index !== -1)
     {
@@ -119,9 +200,14 @@ core.input = function(name, options, value)
   core.setValue(name, options, value);
   if(typeof options.onaction === 'function') 
   {
-    options.onaction((options.storage === 'array' ? _values[name][(_values[name].length-1)] : _values[name]),_values,_taskOptions);
+    options.onaction((options.storage === 'array' ? _values[name][(_values[name].length-1)] : _values[name]),_values,paprika.task.config);
   }
   return core.nextCommand(name, options);
+}
+
+core.loadOptionConfig = function(name, options, value)
+{
+  
 }
 
 module.exports = core;

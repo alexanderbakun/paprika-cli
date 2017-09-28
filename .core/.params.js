@@ -4,8 +4,6 @@
  *   Created by Keleko34
  *****/
 
-var r = require('paprika-cli');
-
 var _args = [],
     _params = [],
     _rules = {};
@@ -36,9 +34,8 @@ function params()
       }
       else
       {
-        _rules[_currentRule.replace(/[\-]/g,'')] = (_args[x].indexOf(',') !== -1 ? _args[x].split(',') : _args[x]);
+        _rules[_currentRule] = (_args[x].indexOf(',') !== -1 ? _args[x].split(',') : _args[x]);
         
-        _params.push(undefined);
         _currentRule = undefined;
       }
   }
