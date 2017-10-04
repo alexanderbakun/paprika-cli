@@ -18,14 +18,12 @@
    firstCommand string | function
 */
 
-var commander = require('commander').version('0.0.1'),
-    inquirer = require('inquirer');
+var inquirer = require('inquirer');
 
 var _task,
     /* _taskOptions = paprika.task.config, */
     _currentTask = '',
     _values = {};
-    
 
 function core()
 {
@@ -42,15 +40,47 @@ function core()
   
   _currentTask = (typeof _taskOptions.firstCommand === 'function' ? _taskOptions.firstCommand() : (_taskOptions.firstCommand || _keys[0]));
   
+  if(_taskOptions[_currentTask].baseCommand)
+  {
+    var found = false;
+    for(var x=0,len=_keys.length;x<len;x++)
+    {
+      if(!_taskOptions[_keys[x]].baseCommand)
+      {
+        found = true;
+        _currentTask = _keys[x];
+        break;
+      }
+    }
+    if(!found) _currentTask = 'end';
+  }
+  
+  /* sort cli helper */
+  core.showHelp()
+  .runCommand(_currentTask, _taskOptions[_currentTask]);
+}
+
+core.showHelp = function()
+{
+  var _taskOptions = paprika.task.config,
+      _keys = Object.keys(_taskOptions).filter(function(v){
+        return (typeof _taskOptions[v] === 'object' && _taskOptions[v].cmd !== undefined && _taskOptions[v].prompt !== undefined)
+      }),
+      helper = require('commander').version('0.0.1');
+  
+  helper.help = function(cb) {
+    this.outputHelp(cb);
+  };
+  
   /* sort cli helper */
   _keys.forEach(function(name){
     var _options = core.parseCLIHelp(name, _taskOptions[name]);
-    commander = commander.option.apply(commander,_options);
+    helper = helper.option.apply(helper,_options);
   });
   
-  commander.option('-o, --options','Displays helper for options',commander.help.bind(commander)).parse(process.argv);
+  helper.option('-o, --options','Displays helper for options',helper.help.bind(helper)).parse(process.argv);
   
-  core.runCommand(_currentTask, _taskOptions[_currentTask]);
+  return core;
 }
 
 core.parseCLIHelp = function(name, options)
@@ -115,6 +145,12 @@ core.runCommand = function(name, options)
       _prompt.choices = (typeof options.prompt.choices === 'function' ? options.prompt.choices(name, _values, options) : (options.prompt.choices || []));
     }
     
+    if(options.prompt.default) _prompt.default = options.prompt.default;
+    
+    if(typeof options.prompt.filter === 'function') _prompt.filter = options.prompt.filter;
+    
+    if(typeof options.prompt.validate === 'function') _prompt.validate = options.prompt.validate;
+    
     inquirer.prompt(_prompt).then(core.prompt(name, options));
   }
   else
@@ -126,11 +162,12 @@ core.runCommand = function(name, options)
 
 core.nextCommand = function(name, options)
 {
-  var _action = options.action;
+  var _action = options.action,
+      _isSub;
   
   if(!_action) console.error(name,' does not have an "action" to perform, please assign it one');
 
-  if(typeof _action === 'function') _action = _action(name, _values, paprika.task.config);
+  if(typeof _action === 'function') _action = _action(name,_values[name], _values, paprika.task.config);
   
   if(!_action || _action === 'exit')
   {
@@ -144,12 +181,20 @@ core.nextCommand = function(name, options)
   else
   {
     _currentTask = _action;
-    if(!paprika.task.config[_currentTask])
+    
+    if(_currentTask.indexOf('::') !== -1)
+    {
+      
+    }
+    else if(!paprika.task.config[_currentTask])
     {
       console.error('No command exists by the name of ',_currentTask);
       process.exit(1);
     }
-    core.runCommand(_currentTask,paprika.task.config[_currentTask]);
+    else
+    {
+      core.runCommand(_currentTask,paprika.task.config[_currentTask]);
+    }
   }
   return core;
 }
@@ -197,7 +242,7 @@ core.prompt = function(name, options)
 {
   return function(res)
   {
-    core.input(name, options, res);
+    core.input(name, options, res[name]);
   }
 }
 

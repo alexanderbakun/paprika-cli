@@ -1,5 +1,6 @@
+var fs = require('fs');
+
 module.exports = {
-  init:true,
   firstCommand:'template',
   template: {
     cmd: {
@@ -11,20 +12,15 @@ module.exports = {
       message: 'Please choose a template to use',
       type: 'list',
       choices: function(){
-        return ['none'];
+        return fs.readdirSync(paprika.location.module_tasks.templates+'/create')
+        .concat((paprika.init ? (fs.readdirSync(paprika.location.local_tasks.templates+'/create')) : ([])));
       }
     },
-    action:'name'
-  },
-  name: {
-    cmd: {
-      long: '--name',
-      short: '-n',
-      help: 'the name of the template to use'
-    },
-    prompt: {
-      message: 'Please name this template'
-    },
-    action:'end'
+    action:function(name,value)
+    {
+      return paprika.loadConfig(paprika.location.module_tasks.templates+'/create/'+value)
+      .showHelp()
+      .getFirstCommand();
+    }
   }
 };
