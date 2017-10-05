@@ -22,8 +22,14 @@ task.fetch = function(title, location)
     title = (title ? task.title(title).title() : task.title());
     location = (location ? task.location(location).location() : task.location());
     
-    _task = require(location + '/'+title);
-    if(_task && _task.toString() !== _default.toString()) _fetched = true;
+    try{
+        _task = require(location + '/' + title);
+        if(_task && _task.toString() !== _default.toString()) _fetched = true;
+    }
+    catch(e)
+    {
+        console.error('There is no task that exists by the name of %o',location + '/' + title);
+    }
     
     return task;
 }

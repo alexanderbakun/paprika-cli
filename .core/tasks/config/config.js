@@ -22,8 +22,14 @@ config.fetch = function(title,location)
     title = (title ? config.title(title).title() : config.title());
     location = (location ? config.location(location).location() : config.location());
     
-    _config = require(location + '/'+title+'.config');
-    if(_config && _config !== _default) _fetched = true;
+    try{
+        _config = require(location + '/' + title + '.config');
+        if(_config && _config !== _default) _fetched = true;
+    }
+    catch(e)
+    {
+        console.error('There is no config that exists by the name of %o',location + '/' + title + '.config');
+    }
     
     return task;
 }
