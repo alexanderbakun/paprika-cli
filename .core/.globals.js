@@ -46,7 +46,7 @@ globals.set = function()
 
   try
   {
-    global.paprika.tasks_local = fs.readdirSync(paprika.location.local_tasks.tasks);
+    global.paprika.tasks_local  = fs.readdirSync(paprika.location.local_tasks.tasks);
     for(var x=0,len=paprika.tasks_module;x<len;x++)
     {
       if(paprika.tasks_local.indexOf(paprika.tasks_module[x]) !== -1) paprika.tasks_module.splice(x,1);
