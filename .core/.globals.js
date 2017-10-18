@@ -5,7 +5,7 @@ var fs = require('fs'),
 function globals()
 {
   /* run .core file after all globals have been setup */
-  core(paprika.task);
+  core();
 }
 
 globals.set = function()
@@ -20,8 +20,8 @@ globals.set = function()
   global.paprika.location.local = process.cwd().replace(/\\/g,'/').replace(/(\/node_modules.+)/g,'');
   global.paprika.location.local_tasks = {
     base: paprika.location.local+'/.paprika',
-    tasks: paprika.location.local+'/.paprika/.tasks',
-    templates:paprika.location.local+'/.paprika/.templates'
+    tasks: paprika.location.local+'/.paprika/tasks',
+    templates:paprika.location.local+'/.paprika/templates'
   }
   
   /* This is the location in relation to the module itself */
@@ -29,7 +29,7 @@ globals.set = function()
   global.paprika.location.module_tasks = {
     base: paprika.location.module+'/src',
     tasks: paprika.location.module+'/src/.tasks',
-    templates: paprika.location.module+'/templates'
+    templates: paprika.location.module+'/src/.templates'
   }
 
   /* parse params */
@@ -91,6 +91,65 @@ globals.getTask = function()
   {
     console.error('There is no task that exists by the name of %o',paprika.params.task);
     process.exit(1);
+  }
+  
+  return globals;
+}
+
+globals.setMethods = function()
+{
+  global.paprika.loadConfig = function(url)
+  {
+    var config = require(url+'/config'),
+        keys = Object.keys(config),
+        localConfig = paprika.task.config,
+        localKeys = Object.keys(localConfig);
+    
+    for(var x=0,len=localKeys.length,key;x<len;x++)
+    {
+      key = localKeys[x];
+      if(typeof localConfig[key] === 'object') localConfig[key].baseCommand = true;
+    }
+    
+    for(var x=0,len=keys.length,key;x<len;x++)
+    {
+      key = keys[x];
+      paprika.task.config[key] = config[key];
+    }
+    return global.paprika;
+  }
+  
+  global.paprika.showHelp = function()
+  {
+    var _params = ['-o','--option','-h','--help'];
+    for(var x = 0,len=process.argv.length;x<len;x++)
+    {
+      if(_params.indexOf(process.argv[x]) !== -1)
+      {
+        core.showHelp();
+        break;
+      }
+    }
+    return global.paprika;
+  }
+  
+  global.paprika.getFirstCommand = function()
+  {
+    var _taskName = '',
+        _config = paprika.task.config,
+        _keys = Object.keys(paprika.task.config).filter(function(v){return (typeof _config[v] === 'object');});
+    if(_config.firstCommand)
+    {
+      _taskName = (typeof _config.firstCommand === 'function' ? _config.firstCommand() : _config.firstCommand);
+      if(!_config[_taskName].baseCommand) return _taskName;
+    }
+    
+    for(var x=0,len=_keys.length,_key;x<len;x++)
+    {
+      _key = _keys[x];
+      if(!_config[_key].baseCommand) return _key;
+    }
+    return 'end';
   }
   
   return globals;

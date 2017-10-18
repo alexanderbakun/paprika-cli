@@ -11,4 +11,5 @@ process.on('unhandledRejection', function (err) {
 globals
 .set()
 .getTask()
+.setMethods()
 .call();

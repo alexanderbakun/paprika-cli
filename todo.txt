@@ -1,5 +1,8 @@
 - Init: init should link paprika-cli to local so that new tasks can use .core
-- Init: certain commands can have in their config, init_required: (true/false)
-- add the inquirer features: default, filter, validate
++ Init: certain commands can have in their config, init_required: (true/false)
++ add the inquirer features: default, filter, validate
 - get rid of commander and make our own helper so that dynamic configs can be supported on helper
+- allow object types for commands also to set the data correctly
+- in object and array type commands they can have sub commands to relect the data
+- allow `::` syntax actions for use with sub items
 
